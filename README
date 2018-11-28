@@ -1,0 +1,30 @@
+#在 macOS 上安装 TensorFlow
+
+#使用 Virtualenv 进行安装
+#请按照以下步骤使用 Virtualenv 安装 TensorFlow：
+
+#启动终端（即 shell）。您将在此 shell 中执行所有后续步骤 cd to the directory
+
+#$ sudo easy_install pip//already installed
+
+#通过发出以下某种格式的命令创建 Virtualenv 环境：
+$ python3 -m venv myvenv
+$ source myvenv/bin/activate
+
+#确保安装 pip 8.1 或更高版本：
+
+$ easy_install -U pip//(targetDirectory)// already had the most recent version
+
+#发出以下某个命令，将 TensorFlow 及其所需的所有软件包安装到活动 Virtualenv 环境中
+pip3 install --upgrade tensorflow 
+
+#GPU package for CUDA-enabled GPU cards
+>>##pip install tensorflow-gpu-->don't use
+
+# start Tensorboard
+tensorboard --logdir logs/
+/Users/yiyuan/desktop/spiceup/models/
+
+#install all requirements
+pip freeze > requirements.txt
+pip install -r requirements.txt
