@@ -28,14 +28,18 @@ from keras.preprocessing import image
 from keras.models import Sequential, model_from_json,load_model,Model
 from tensorflow.keras import layers
 from tensorflow.keras import Model
+import keras.utils
+from keras import utils as np_utils
 
+from keras.utils.np_utils import to_categorical
+import seaborn as sns
 
 #####1. 数据处理读入整理增强#####
 
 # 1)read data /the dataset has already been marked as class0=no cancer and class1=has cancer
 
-
-image = glob( '../dataImg/*/**/*.png',recursive=True)
+image = glob( '../his/*/*.png',recursive=True)
+#image = glob( '../dataImg/*/**/*.png',recursive=True)
 lowerIndex=0
 upperIndex = len(image)
 class0 = '*class0.png'
@@ -65,58 +69,49 @@ X,Y = process_images(0,upperIndex)
 
 df = pd.DataFrame(image)#load the dataset as a panda dataframe
 df["images"]=X
-df["lables"]=Y
+df["labels"]=Y
 
 X=np.array(X)
 
 
-
-#dfClassZero=pd.DataFrame(classZero)
-#dfClassOne=pd.DataFrame(classOne)
-
 # 2)split training and testing 分开训练集与测试集
 
-X_train, X_test, Y_train, Y_test = train_test_split(X, Y,test_size=0.2,  shuffle=True)
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y,test_size=0.25,  shuffle=True)
 
-# # X_train = X_train.astype('float32')
-# # X_test= X_test.astype('float32')
 
-distribution=df['lables'].value_counts()
-print(distribution)
 
-#plot test
+# plotImages=classZero
+# i_ = 0
+# plt.rcParams['figure.figsize'] = (10.0, 10.0)
+# plt.subplots_adjust(wspace=0, hspace=0)
+# for l in plotImages[:4]:
+# 	im = cv2.imread(l)
+# 	im = cv2.resize(im, (50, 50)) 
+# 	color=[255,255,255]
+# 	new_im = cv2.copyMakeBorder(im,20,20, 20,20, 20,
+#     value=color)
+# 	plt.subplot(1, 4, i_+1).set_title("Benign")
+# 	plt.imshow(new_im); plt.axis('on')
+# 	i_ += 1
+# plt.show()
 
-plotImages=classZero
-i_ = 0
-plt.rcParams['figure.figsize'] = (10.0, 10.0)
-plt.subplots_adjust(wspace=0, hspace=0)
-for l in plotImages[:4]:
-	im = cv2.imread(l)
-	im = cv2.resize(im, (50, 50)) 
-	color=[255,255,255]
-	new_im = cv2.copyMakeBorder(im,20,20, 20,20, 20,
-    value=color)
-	plt.subplot(1, 4, i_+1).set_title("Benign")
-	plt.imshow(new_im); plt.axis('on')
-	i_ += 1
-plt.show()
+# plotImages=classOne
+# i_ = 0
+# plt.rcParams['figure.figsize'] = (10.0, 10.0)
+# plt.subplots_adjust(wspace=0, hspace=0)
+# for l in plotImages[:4]:
+# 	im = cv2.imread(l)
+# 	im = cv2.resize(im, (50, 50)) 
+# 	color=[255,255,255]
+# 	new_im = cv2.copyMakeBorder(im,20,20, 20,20, 20,
+#     value=color)
+# 	plt.subplot(1, 4, i_+1).set_title("Malignant")
+# 	plt.imshow(new_im); plt.axis('on')
+# 	i_ += 1
+# plt.show()
 
-plotImages=classOne
-i_ = 0
-plt.rcParams['figure.figsize'] = (10.0, 10.0)
-plt.subplots_adjust(wspace=0, hspace=0)
-for l in plotImages[:4]:
-	im = cv2.imread(l)
-	im = cv2.resize(im, (50, 50)) 
-	color=[255,255,255]
-	new_im = cv2.copyMakeBorder(im,20,20, 20,20, 20,
-    value=color)
-	plt.subplot(1, 4, i_+1).set_title("Malignant")
-	plt.imshow(new_im); plt.axis('on')
-	i_ += 1
-plt.show()
+img_input = layers.Input(shape=(100, 100, 3))
 
-img_input = layers.Input(shape=(50, 50, 3))
 
 # First convolution extracts 16 filters that are 3x3
 # Convolution is followed by max-pooling layer with a 2x2 window
@@ -138,88 +133,80 @@ x = layers.Flatten()(x)
 
 # Create a fully connected layer with ReLU activation and 512 hidden units
 x = layers.Dense(512, activation='relu')(x)
+
 # Add a dropout rate of 0.5
-x = layers.Dropout(0.5)(x)
+x = layers.Dropout(0.7)(x)
 
 # Create output layer with a single node and sigmoid activation
 output = layers.Dense(1, activation='sigmoid')(x)
 
-# x=layers.Conv2D(16, 3, activation='relu')(img_input)
-# x=layers.MaxPooling2D(2)(x)
-# #x=layers.local_response_normalization(x)
-# x=layers.Conv2D(32, 3,activation='relu')(x)
-# x=layers.Conv2D(32, 3, activation='relu')(x)
-# #x=layers.local_response_normalization(x)
-# x=layers.MaxPooling2D(2)(x)
-
-# # 3a
-# x=layers.Conv2D(64, 3, activation='relu', name='3a')(x)
-# x=layers.Conv2D(96, 3, activation='relu')(x)
-# x=layers.Conv2D(128, 3,activation='relu')(x)
-# x=layers.Conv2D(128, 3,activation='relu')(x)
-# x=layers.Conv2D(128,3,activation='relu')(x)
-# x=layers.MaxPooling2D(2)(x)
-# x=layers.Conv2D(128, 3,activation='relu')(x)
-# x=layers.Dense(512,activation='relu')(x)
-
-# # 3b
-# x=layers.Conv2D(128, 3, activation='relu', name='3b')(x)
-# x=layers.Conv2D(128, 3,activation='relu')(x)
-# x=layers.Conv2D(192, 3, activation='relu')(x)
-# x=layers.Conv2D(192, 3,activation='relu')(x)
-# x=layers.Conv2D(512,3,activation='relu')(x)
-# x=layers.MaxPooling2D(2)(x)
-# x=layers.MaxPooling2D(2)(x)
-# x=layers.Dense(1, activation='relu')(x)
-
-output = layers.Dense(1, activation='sigmoid')(x)
-
-# fc
+# Create model:
+# input = input feature map
+# output = input feature map + stacked convolution/maxpooling layers + fully 
+# connected layer + sigmoid output layer
 model = Model(img_input, output)
 
 model.summary()
 
+
+
 from tensorflow.keras.optimizers import RMSprop
 
 model.compile(loss='binary_crossentropy',
-              optimizer=RMSprop(lr=0.001),
+              optimizer=RMSprop(lr=0.001, momentum=0.9),
               metrics=['acc'])
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 
-datagen = ImageDataGenerator(rotation_range=10,
-                             width_shift_range=0.1,  # randomly shift images horizontally (fraction of total width)
-                             height_shift_range=0.1,  # randomly shift images vertically (fraction of total height)
-                             horizontal_flip=True,  # randomly flip images
-                             vertical_flip=False, # randomly flip images
-                             rescale=1./255 # All images will be rescaled by 1./255
-                             )  
+datagen = ImageDataGenerator(
+    featurewise_center=True,
+    featurewise_std_normalization=True,
+    rotation_range=20,
+    width_shift_range=0.2,
+    height_shift_range=0.2,
+    horizontal_flip=True,
+    vertical_flip=True,
+    rescale=1./255,
+     width_shift_range=0.2,
+    height_shift_range=0.2,
+    shear_range=0.2,
+    zoom_range=0.2,
 
-class_weigh = class_weight.compute_class_weight('balanced', np.unique(Y_train), Y_train)
+  )
 
-history=model.fit_generator(datagen.flow(X_train, Y_train, batch_size=50),
-                        steps_per_epoch=len(X_train)/32, epochs=20, class_weight=class_weight,verbose=1,
-                        validation_data=[X_test, Y_test])
 
-plt.figure(figsize=(8,8))
-plt.subplot(1,2,1)
-plt.plot(history.history['acc'])
-plt.plot(history.history['val_acc'])
-plt.title('model accuracy')
-plt.ylabel('accuracy')
-plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
-plt.savefig('./accuracy_curve.png')
-plt.clf()
-# summarize history for loss
-plt.subplot(1,2,2)
-plt.plot(history.history['loss'])
-plt.plot(history.history['val_loss'])
-plt.title('model loss')
-plt.ylabel('loss')
-plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
-plt.savefig('./loss_curve.png')
+history = model.fit_generator(
+	  datagen.flow(X_train, Y_train, batch_size=80),      
+      steps_per_epoch=len(X_train)/32,   # 2000 images = batch_size * steps
+      epochs=15,
+       # 1000 images = batch_size * steps
+      verbose=1,
+      validation_data=[X_test, Y_test]
+      )
+
+score = model.evaluate(X_test,Y_test, verbose=0)
+print('\nKeras CNN #1C - accuracy:', score[1],'\n')
+
+
+# plt.figure(figsize=(8,8))
+# plt.subplot(1,2,1)
+# plt.plot(history.history['acc'])
+# plt.plot(history.history['val_acc'])
+# plt.title('model accuracy')
+# plt.ylabel('accuracy')
+# plt.xlabel('epoch')
+# plt.legend(['train', 'test'], loc='upper left')
+# plt.savefig('./accuracy_curve.png')
+# plt.clf()
+# # summarize history for loss
+# plt.subplot(1,2,2)
+# plt.plot(history.history['loss'])
+# plt.plot(history.history['val_loss'])
+# plt.title('model loss')
+# plt.ylabel('loss')
+# plt.xlabel('epoch')
+# plt.legend(['train', 'test'], loc='upper left')
+# plt.savefig('./loss_curve.png')
 
 
 # # # #print(model)
